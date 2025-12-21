@@ -1,0 +1,72 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.venv/
+venv/
+ENV/
+env/
+
+# =========================
+# OS / Editor noise
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =========================
+# Data 
+# =========================
+data/raw/
+data/processed/
+data/features/
+
+
+!data/**/.gitkeep
+
+# =========================
+# Parquet / Large Artifacts
+# =========================
+*.parquet
+*.gz
+
+# =========================
+# AWS / Terraform
+# =========================
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+terraform.tfvars.json
+
+# =========================
+# Secrets / Config
+# =========================
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Jupyter (if used later)
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Temporary / Scratch
+# =========================
+tmp/
+scratch/
