@@ -3,8 +3,9 @@ import gzip
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+import glob
 
-RAW_FILE = "data/raw/sample_cloudtrail.json.gz"
+RAW_DIR = "data/raw/cloudtrail"   # <-- directory, not single file
 OUTPUT_DIR = "data/processed/cloudtrail_parquet"
 
 def extract_record(record: dict) -> dict:
@@ -33,21 +34,35 @@ def extract_record(record: dict) -> dict:
         "error_message": record.get("errorMessage"),
     }
 
-def load_cloudtrail(file_path: str) -> pd.DataFrame:
-    with gzip.open(file_path, "rt", encoding="utf-8") as f:
-        payload = json.load(f)
+def load_all_cloudtrail(raw_dir: str) -> pd.DataFrame:
+    all_rows = []
 
-    records = payload.get("Records", [])
-    rows = [extract_record(r) for r in records]
+    files = glob.glob(f"{raw_dir}/**/*.json.gz", recursive=True)
+    print(f"[+] Found {len(files)} CloudTrail files")
 
-    df = pd.DataFrame(rows)
+    for file_path in files:
+        with gzip.open(file_path, "rt", encoding="utf-8") as f:
+            payload = json.load(f)
+
+        records = payload.get("Records", [])
+        all_rows.extend(extract_record(r) for r in records)
+
+    df = pd.DataFrame(all_rows)
+
+    if df.empty:
+        raise RuntimeError("No CloudTrail records loaded")
+
     df["event_time"] = pd.to_datetime(df["event_time"], utc=True)
 
     # Partition columns
     df["year"] = df["event_time"].dt.year
     df["month"] = df["event_time"].dt.month
     df["day"] = df["event_time"].dt.day
-    df["mfa_authenticated"] = df["mfa_authenticated"].map({"true": True, "false": False})
+
+    df["mfa_authenticated"] = df["mfa_authenticated"].map(
+        {"true": True, "false": False}
+    )
+
     df["is_aws_service_call"] = df["user_type"] == "AWSService"
 
     return df
@@ -63,8 +78,9 @@ def write_parquet(df: pd.DataFrame):
     )
 
 if __name__ == "__main__":
-    df = load_cloudtrail(RAW_FILE)
+    df = load_all_cloudtrail(RAW_DIR)
     write_parquet(df)
 
-    print("Normalization complete")
+    print("[+] Normalization complete")
     print(df.head())
+    print(f"[+] Total events processed: {len(df)}")

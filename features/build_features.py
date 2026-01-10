@@ -2,7 +2,7 @@ import pandas as pd
 
 PARQUET_PATH = "data/processed/cloudtrail_parquet"
 OUTPUT_PATH = "data/features/behavior_features.parquet"
-WINDOW = "5min"
+WINDOW = "1min"
 
 def load_data():
     df = pd.read_parquet(PARQUET_PATH)
