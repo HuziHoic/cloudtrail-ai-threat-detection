@@ -4,33 +4,53 @@ from pathlib import Path
 
 RISK_CONFIG = Path(__file__).parent / "risk_weights.yaml"
 
+HIGH_RISK_APIS = {
+    "CreateAccessKey",
+    "AttachRolePolicy",
+    "PassRole"
+}
+
 with open(RISK_CONFIG, "r") as f:
     RISK_WEIGHTS = yaml.safe_load(f)
 
-def extract_window_context(events: pd.DataFrame) -> dict:
+def extract_window_context(row):
+    api_list = row.get("api_call_list", [])
+
+    if isinstance(api_list, str):
+        api_list = api_list.split(",")
+
     return {
-        "apis": set(events["event_name"].dropna()),
-        "identity_type": events["user_type"].mode().iloc[0],
-        "mfa_used": events["mfa_authenticated"].any(),
-        "readonly_only": events["read_only"].all(),
+        "user_arn": row["user_arn"],
+        "api_calls": row.get("unique_api_calls", 0),
+        "is_admin": row.get("is_admin_role", False),
+        "high_risk_api_used": any(api in HIGH_RISK_APIS for api in api_list),
     }
 
 def compute_rule_risk(context):
+    """
+    Returns:
+      numeric_score (int)
+      reasons (list[str])
+    """
     score = 0
     reasons = []
 
-    if context["high_risk_api_used"]:
-        score += 30
+    if context.get("high_risk_api_used", False):
+        score += 3
         reasons.append("High-risk IAM API used")
 
-    if context["admin_role"]:
-        score += 20
-        reasons.append("Privileged IAM role")
+    if context.get("is_admin", False):
+        score += 2
+        reasons.append("Admin or privileged role")
 
     return score, reasons
 
 
-def hybrid_score(anomaly_score: float, rule_score: float) -> float:
+def hybrid_score(anomaly_score, rule_score):
+    """
+    anomaly_score: 0–100
+    rule_score: small int (0–5)
+    """
     return (0.7 * anomaly_score) + (0.3 * rule_score * 20)
 
 def severity_from_score(score: float) -> str:

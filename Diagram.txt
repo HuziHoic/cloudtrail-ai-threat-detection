@@ -1,0 +1,43 @@
+CloudTrail logs are ingested from S3, normalized defensively, analyzed in time windows, scored using both ML and rule-based heuristics, and alerts are published via SNS with least-privilege IAM.
+
++-------------------+
+|   AWS CloudTrail  |
+| (Mgmt Events)    |
++---------+---------+
+          |
+          v
++-------------------+
+|   S3 Log Bucket   |
+| (Read-only)       |
++---------+---------+
+          |
+          v
++----------------------------+
+| Feature Extraction Engine |
+| - Normalize events        |
+| - Sliding windows         |
+| - Safe parsing            |
++-------------+--------------+
+              |
+      +-------+--------+
+      |                |
+      v                v
++------------+   +----------------+
+| ML Model   |   | Rule Engine    |
+| Isolation  |   | Heuristics     |
+| Forest     |   | (Failed auth, |
++------+-----+   | new region)   |
+       |         +-------+--------+
+       +-----------------+
+                 |
+                 v
++----------------------------+
+| Hybrid Risk Scoring       |
+| Weighted ML + Rules       |
++-------------+--------------+
+              |
+              v
++----------------------------+
+| SNS Alerting               |
+| Email Notifications        |
++----------------------------+

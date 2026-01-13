@@ -35,5 +35,15 @@ CloudTrail → S3 → Log Normalization → Feature Engineering → ML Model →
 - Isolation Forest (initial model)
 - SNS / Slack (alerting)
 
-## Project Status
-Phase 0 — Project setup and scope definition complete.
+## Known Limitations
+- Uses batch window analysis (not true streaming)
+- Relies on CloudTrail management events only
+- No identity graph correlation (yet)
+- ML model trained on synthetic attack data
+- No automated remediation (alert-only)
+
+## Planned Improvements
+- Real-time ingestion via Kinesis
+- Identity baseline per principal
+- Auto-remediation using Lambda + SCP
+- OpenSearch-backed visualization

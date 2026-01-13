@@ -29,11 +29,10 @@ def build_rule_context(row: pd.Series) -> dict:
     Build rule context from aggregated feature window
     """
     return {
-        "apis": set(),  # placeholder (Phase 7 will use raw events)
-        "identity_type": "AssumedRole" if "assumed-role" in row["user_arn"] else "IAMUser",
+        "high_risk_api_used": row.get("new_api_used", False),
+        "is_admin": "Admin" in row["user_arn"] or "assumed-role" in row["user_arn"],
         "mfa_used": row.get("mfa_used", True),
         "readonly_only": row.get("failed_call_ratio", 0) == 0,
-        "new_api_used": row.get("new_api_used", False),
     }
 
 
@@ -56,12 +55,15 @@ def main():
 
     print("[+] Applying rule-based risk scoring...")
     rule_scores = []
+    rule_reasons_col = []
     hybrid_scores = []
     severities = []
 
     for _, row in df.iterrows():
         context = build_rule_context(row)
-        rule_score = compute_rule_risk(context)
+
+        # FIX: unpack numeric score + explanations
+        rule_score, rule_reasons = compute_rule_risk(context)
 
         final_score = hybrid_score(
             anomaly_score=row["anomaly_score"],
@@ -69,10 +71,12 @@ def main():
         )
 
         rule_scores.append(rule_score)
+        rule_reasons_col.append("; ".join(rule_reasons))
         hybrid_scores.append(final_score)
         severities.append(severity_from_score(final_score))
 
     df["rule_score"] = rule_scores
+    df["rule_reasons"] = rule_reasons_col
     df["final_score"] = hybrid_scores
     df["severity"] = severities
 
@@ -83,7 +87,7 @@ def main():
     print(
         df.sort_values("final_score", ascending=False)
           .head(5)[
-              ["user_arn", "time_window", "final_score", "severity"]
+              ["user_arn", "time_window", "final_score", "severity", "rule_reasons"]
           ]
     )
 
