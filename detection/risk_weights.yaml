@@ -1,0 +1,21 @@
+# API sensitivity weights
+api_risk:
+  CreateAccessKey: 5.0
+  AttachRolePolicy: 4.5
+  PutUserPolicy: 4.5
+  PassRole: 4.0
+  UpdateAssumeRolePolicy: 4.0
+  AddUserToGroup: 3.5
+
+# IAM identity risk
+identity_risk:
+  Root: 6.0
+  IAMUser: 3.0
+  AssumedRole: 2.0
+  AWSService: 0.5
+
+# Contextual modifiers
+context:
+  mfa_missing: 2.0
+  readonly_only: -1.5
+  aws_managed_policy: -1.0
