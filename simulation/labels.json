@@ -1,0 +1,8 @@
+[
+  {
+    "start": "2026-01-09T20:10:00Z",
+    "end": "2026-01-09T20:15:00Z",
+    "label": "malicious",
+    "reason": "Access key creation + admin policy attachment"
+  }
+]
